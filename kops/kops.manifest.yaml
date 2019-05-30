@@ -1,0 +1,286 @@
+apiVersion: kops/v1alpha2
+kind: Cluster
+metadata:
+  creationTimestamp: null
+  name: <cluster name>
+spec:
+  additionalPolicies:
+    node: |
+      [
+        {
+            "Action": [
+                "route53:ChangeResourceRecordSets"
+            ],
+            "Effect": "Allow",
+            "Resource": ["arn:aws:route53:::hostedzone/*"]
+        },
+        {
+            "Action": [
+                "sts:AssumeRole",
+                "route53:ListHostedZones",
+                "route53:ListResourceRecordSets"
+            ],
+            "Effect": "Allow",
+            "Resource": ["*"]
+        },
+        {
+          "Effect": "Allow",
+          "Action": ["acm:DescribeCertificate", "acm:ListCertificates", "acm:GetCertificate"],
+          "Resource": "*"
+        },
+        {
+          "Effect": "Allow",
+          "Action": [
+            "ec2:AuthorizeSecurityGroupIngress",
+            "ec2:CreateSecurityGroup",
+            "ec2:CreateTags",
+            "ec2:DeleteTags",
+            "ec2:DeleteSecurityGroup",
+            "ec2:DescribeInstances",
+            "ec2:DescribeInstanceStatus",
+            "ec2:DescribeSecurityGroups",
+            "ec2:DescribeSubnets",
+            "ec2:DescribeTags",
+            "ec2:DescribeVpcs",
+            "ec2:ModifyInstanceAttribute",
+            "ec2:ModifyNetworkInterfaceAttribute",
+            "ec2:RevokeSecurityGroupIngress"
+          ],
+          "Resource": "*"
+        },
+        {
+          "Effect": "Allow",
+          "Action": [
+            "elasticloadbalancing:AddTags",
+            "elasticloadbalancing:CreateListener",
+            "elasticloadbalancing:CreateLoadBalancer",
+            "elasticloadbalancing:CreateRule",
+            "elasticloadbalancing:CreateTargetGroup",
+            "elasticloadbalancing:DeleteListener",
+            "elasticloadbalancing:DeleteLoadBalancer",
+            "elasticloadbalancing:DeleteRule",
+            "elasticloadbalancing:DeleteTargetGroup",
+            "elasticloadbalancing:DeregisterTargets",
+            "elasticloadbalancing:DescribeListeners",
+            "elasticloadbalancing:DescribeLoadBalancers",
+            "elasticloadbalancing:DescribeLoadBalancerAttributes",
+            "elasticloadbalancing:DescribeRules",
+            "elasticloadbalancing:DescribeSSLPolicies",
+            "elasticloadbalancing:DescribeTags",
+            "elasticloadbalancing:DescribeTargetGroups",
+            "elasticloadbalancing:DescribeTargetGroupAttributes",
+            "elasticloadbalancing:DescribeTargetHealth",
+            "elasticloadbalancing:ModifyListener",
+            "elasticloadbalancing:ModifyLoadBalancerAttributes",
+            "elasticloadbalancing:ModifyRule",
+            "elasticloadbalancing:ModifyTargetGroup",
+            "elasticloadbalancing:ModifyTargetGroupAttributes",
+            "elasticloadbalancing:RegisterTargets",
+            "elasticloadbalancing:RemoveTags",
+            "elasticloadbalancing:SetIpAddressType",
+            "elasticloadbalancing:SetSecurityGroups",
+            "elasticloadbalancing:SetSubnets",
+            "elasticloadbalancing:SetWebACL"
+          ],
+          "Resource": "*"
+        },
+        {
+          "Effect": "Allow",
+          "Action": ["iam:GetServerCertificate", "iam:ListServerCertificates"],
+          "Resource": "*"
+        },
+        {
+          "Effect": "Allow",
+          "Action": [
+            "waf-regional:GetWebACLForResource",
+            "waf-regional:GetWebACL",
+            "waf-regional:AssociateWebACL",
+            "waf-regional:DisassociateWebACL"
+          ],
+          "Resource": "*"
+        },
+        {
+          "Effect": "Allow",
+          "Action": [
+            "tag:GetResources",
+            "tag:TagResources"
+          ],
+          "Resource": "*"
+        },
+        {
+          "Effect": "Allow",
+          "Action": [
+            "waf:GetWebACL"
+          ],
+          "Resource": "*"
+        },
+        {
+            "Effect": "Allow",
+            "Action": [
+                "autoscaling:DescribeAutoScalingGroups",
+                "autoscaling:DescribeAutoScalingInstances",
+                "autoscaling:DescribeTags",
+                "autoscaling:SetDesiredCapacity",
+                "autoscaling:TerminateInstanceInAutoScalingGroup",
+                "autoscaling:DescribeLaunchConfigurations"
+            ],
+            "Resource": "*"
+        }
+      ]
+  api:
+    loadBalancer:
+      type: Public
+  authorization:
+    rbac: {}
+  channel: stable
+  cloudProvider: aws
+  configBase: s3://<bucket name>/<cluster name>
+  dnsZone: <DNS zone>
+  etcdClusters:
+  - etcdMembers:
+    - instanceGroup: master-us-east-1a
+      name: a
+    - instanceGroup: master-us-east-1c
+      name: c
+    - instanceGroup: master-us-east-1d
+      name: d
+    name: main
+  - etcdMembers:
+    - instanceGroup: master-us-east-1a
+      name: a
+    - instanceGroup: master-us-east-1c
+      name: c
+    - instanceGroup: master-us-east-1d
+      name: d
+    name: events
+  iam:
+    allowContainerRegistry: true
+    legacy: false
+  kubeDNS:
+    provider: CoreDNS
+  kubelet:
+    evictionHard: memory.available<512Mi,nodefs.available<10%,nodefs.inodesFree<5%,imagefs.available<10%,imagefs.inodesFree<5%
+    kubeletCgroups: /systemd/system.slice
+    runtimeCgroups: /systemd/system.slice
+  kubeAPIServer:
+    admissionControl:
+      - AlwaysPullImages
+      - DenyEscalatingExec
+      - PodSecurityPolicy
+      - NodeRestriction
+  kubernetesApiAccess:
+  - <IPs>
+  kubernetesVersion: v1.11.9
+  masterPublicName: api.<cluster name>
+  networkCIDR: <CIDR>
+  networkID: <VPC ID>
+  networking:
+    weave:
+      mtu: 8912
+  nonMasqueradeCIDR: 100.64.0.0/10
+  sshAccess:
+  - <IPs>
+  subnets:
+  - cidr: <CIDR>
+    id: <SUBNET ID>
+    name: us-east-1a
+    type: Private
+    zone: us-east-1a
+  - cidr: <CIDR>
+    id: <SUBNET ID>
+    name: us-east-1c
+    type: Private
+    zone: us-east-1c
+  - cidr: <CIDR>
+    id: <SUBNET ID>
+    name: us-east-1d
+    type: Private
+    zone: us-east-1d
+  topology:
+    dns:
+      type: Public
+    masters: private
+    nodes: private
+
+---
+
+apiVersion: kops/v1alpha2
+kind: InstanceGroup
+metadata:
+  creationTimestamp: null
+  labels:
+    kops.k8s.io/cluster: <cluster name>
+  name: master-us-east-1a
+spec:
+  image: kope.io/k8s-1.10-debian-jessie-amd64-hvm-ebs-2018-08-17
+  machineType: t2.medium
+  maxSize: 1
+  minSize: 1
+  nodeLabels:
+    kops.k8s.io/instancegroup: master-us-east-1a
+  role: Master
+  subnets:
+  - us-east-1a
+
+---
+
+apiVersion: kops/v1alpha2
+kind: InstanceGroup
+metadata:
+  creationTimestamp: null
+  labels:
+    kops.k8s.io/cluster: <cluster name>
+  name: master-us-east-1c
+spec:
+  image: kope.io/k8s-1.10-debian-jessie-amd64-hvm-ebs-2018-08-17
+  machineType: t2.medium
+  maxSize: 1
+  minSize: 1
+  nodeLabels:
+    kops.k8s.io/instancegroup: master-us-east-1c
+  role: Master
+  subnets:
+  - us-east-1c
+
+---
+
+apiVersion: kops/v1alpha2
+kind: InstanceGroup
+metadata:
+  creationTimestamp: null
+  labels:
+    kops.k8s.io/cluster: <cluster name>
+  name: master-us-east-1d
+spec:
+  image: kope.io/k8s-1.10-debian-jessie-amd64-hvm-ebs-2018-08-17
+  machineType: t2.medium
+  maxSize: 1
+  minSize: 1
+  nodeLabels:
+    kops.k8s.io/instancegroup: master-us-east-1d
+  role: Master
+  subnets:
+  - us-east-1d
+
+---
+
+apiVersion: kops/v1alpha2
+kind: InstanceGroup
+metadata:
+  creationTimestamp: null
+  labels:
+    kops.k8s.io/cluster: <cluster name>
+  name: nodes
+spec:
+  image: kope.io/k8s-1.10-debian-jessie-amd64-hvm-ebs-2018-08-17
+  machineType: m4.xlarge
+  maxSize: 6
+  minSize: 3
+  nodeLabels:
+    kops.k8s.io/instancegroup: nodes
+    #k8s.io/cluster-autoscaler: enabled
+  role: Node
+  subnets:
+  - us-east-1a
+  - us-east-1c
+  - us-east-1d
